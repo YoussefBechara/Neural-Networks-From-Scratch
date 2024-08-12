@@ -57,29 +57,45 @@ class NeuralNetwork(Activation_Functions, Loss_functions, Optimizers):
         self.create_neural_network()
         
     def back_propagation(self, epochs=5): #takes curr neural network and outputs it with the optimal weights
-        def forward_pass(self):
+        def forward_pass():
             list_of_y_predicted = []
             for i in range(len(self.X_train[X_train.columns[0]])):#this is wrong cuz inp is flattened
                 #inp layer
-                inp_node_value = list(self.X_train)  #this is also wrong for the same reason
+                
+                inp_node_value = tuple(self.X_train[X_train.columns[d]].iloc[i] for d in range(len(self.X_train.columns)))   #this is also wrong for the same reason
                 for r in range(self.hidden_layer_node_count):
                     weighted_sum = 0
                     for c in range(len(self.input_layer)):
                         weighted_sum += inp_node_value[c]*self.input_layer[c]['weights'][r]
-                    weighted_sum += self.hidden_layers[0][r]['bias'][0]
-                    weighted_sum_after_activation_function = self.perform_activation_function(activation=self.hidden_layers[0][r]['activation function'][0],x=weighted_sum)
-                    self.hidden_layers[0][r]['node_value'].append(weighted_sum_after_activation_function)
+                    weighted_sum += self.hidden_layers[0][r]['bias']
+                    #print(self.hidden_layers[0][r]['activation function'][0],weighted_sum)
+                    weighted_sum_after_activation_function = self.perform_activation_function(activation=self.hidden_layers[0][r]['activation function'],x=weighted_sum)
+                    self.hidden_layers[0][r]['node_value'] = weighted_sum_after_activation_function
+                
                 #hidden layers
-                for r in range(self.hidden_layer_count):
+                for r in range(1,self.hidden_layer_count):
                     for c in range(self.hidden_layer_node_count):
+                        weighted_sum = 0
                         for z in range(self.hidden_layer_node_count):
-                            self.hidden_layers[r][c]                        
+                            weighted_sum += self.hidden_layers[r-1][z]['node_value']*self.hidden_layers[r-1][z]['weights'][c]
+                        weighted_sum += self.hidden_layers[r][c]['bias']
+                        weighted_sum_after_activation_function = self.perform_activation_function(activation=self.hidden_layers[r][c]['activation function'],x=weighted_sum)
+                        self.hidden_layers[r][c]['node_value'] = weighted_sum_after_activation_function
+                
                 #output layer
-        def compute_loss(self):
+                for r in range(len(self.output_layer)):
+                    for c in range(self.hidden_layer_node_count):
+                        weighted_sum = 0
+                        weighted_sum += self.hidden_layers[-1][c]['node_value']*self.hidden_layers[-1][c]['weights'][r]
+                        weighted_sum += self.output_layer[r]['bias']
+                    weighted_sum_after_activation_function = self.perform_activation_function(activation=self.output_layer[r]['activation'],x=weighted_sum)
+                    self.output_layer[r]['node_value'] = weighted_sum_after_activation_function
+                print(self.output_layer)
+        def compute_loss():
             pass
-        def backward_pass(self):
+        def backward_pass():
             pass
-        def update_weights_bias(self):
+        def update_weights_bias():
             pass
         for i in range(epochs):
             forward_pass()
@@ -96,6 +112,8 @@ class NeuralNetwork(Activation_Functions, Loss_functions, Optimizers):
         self.output_layer_activation = output_layer_activation
         
     def create_neural_network(self):
+        def flatten_inp(x):
+            pass
         self.input_layer = [{'weights':[random.uniform(-0.05, 0.05) for i in range(self.hidden_layer_node_count)]} for i in range(len(self.X_train.columns))]
         self.hidden_layers = []
         for r in range(self.hidden_layer_count):
@@ -106,13 +124,13 @@ class NeuralNetwork(Activation_Functions, Loss_functions, Optimizers):
                 else:
                     self.hidden_layers[r].append({'activation function':self.activation,'weights':[random.uniform(-0.05, 0.05) for i in range(self.num_of_classes)],'bias': 0, 'node_value': 0})
         if self.is_regression_or_classification(self.y_train) == 'regression' or self.is_regression_or_classification(self.y_train) == 'classification':
-            self.output_layer = [{'activation': self.output_layer_activation, 'output':self.output}]
+            self.output_layer = [{'activation': self.output_layer_activation, 'output':self.output, 'bias': 0}]
         elif self.is_regression_or_classification(self.y_train) == 'multi-classification':
-            self.output_layer = [{'activation': self.output_layer_activation, 'output':self.output} for i in range(self.num_of_classes)]
+            self.output_layer = [{'activation': self.output_layer_activation,'bias': 0, 'output':self.output} for i in range(self.num_of_classes)]
         
         self.neural_network = [self.input_layer, self.hidden_layers, self.output_layer]
-        print(self.neural_network)
-        
+        print(self.output_layer)
+        self.back_propagation()
     def is_regression_or_classification(self, target):
         if list(target.unique()) == [0, 1] or list(target.unique()) == [1, 0]:
             return 'classification'
@@ -135,5 +153,5 @@ if __name__ == '__main__':
     df = pd.read_csv('test_scores.csv')
     X_train, y_train = df[['math','cs']], df.passed
     model = NeuralNetwork()
-    model.configure(hidden_layer_count=2, hidden_layer_node_count=5, optimizer='SGD', loss='MSE', activation='RELU', output_layer_activation='sigmoid')
+    model.configure(hidden_layer_count=2, hidden_layer_node_count=5, optimizer='SGD', loss='MSE', activation='tanh', output_layer_activation='sigmoid')
     model.fit(X_train, y_train)
